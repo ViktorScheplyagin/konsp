@@ -55,3 +55,13 @@ https://www.embed-map.com/
 6. Пункт меню "Time Sheet" - для чего?
 7. Actions в My Board
 8. Пункты верхней панели каждого вью
+
+
+
+
+
+----------For video---------------
+The widget is extension, that provide a set of configuration options.
+It makes possible to display a wide range of content, place it at specific block references in your store.
+The Widget tool makes it easy to place existing content such as blocks with images and text, and interactive elements most anywhere in your store.
+Magento widgets help administrators add static or dynamic content to CMS pages and blocks.
