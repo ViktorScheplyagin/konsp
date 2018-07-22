@@ -67,3 +67,4 @@ The Widget tool makes it easy to place existing content such as blocks with imag
 Magento widgets help administrators add static or dynamic content to CMS pages and blocks.
 
 Тип виждета определяет метод отображения и тип информации. В зависимости от конфикурации и установленных расширений magento, содержимое списка может быть разным.
+
