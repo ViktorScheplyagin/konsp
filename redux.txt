@@ -1,0 +1,93 @@
+------------------------------------Redux---------------------------------------
+Необходимо установить 2 модуля
+	1. redux
+	2. react-redux
+В корневом файле приложения импортировать
+	import { Provider } from 'react-redux'
+Обернуть приложение в Provider - он служит оберткой для приложения и позволяет получать компонентам данные со Store
+	<Provider>
+		<App />
+	</Provider>
+Импортировать функцию, создающую Store
+	import { createStore } from 'redux'
+Создать Store
+	const store = createStore(reducer)
+		reducer - это функция, которая запускается каждый раз, когда мы отправляем какое-то действие.
+		Суть reducer'а заключается в том, чтобы взять предыдущее состояние компонента, то что нужно поменять, обработать их и вернуть результат.
+Соединить Provider и Store
+	добавить Provider'у аттрибут store={store}
+	Этим самым мы сделали данные доступными нашему компоненту
+Создадим папку "reducers" и создадим в ней 2 файла
+	index.js - содержит родительский reducer, который хранит все дочерние reducer'ы
+		import { combineReducers } from 'redux';
+		import userInfo from './info';
+
+		const rootReducer = combineReducers({
+			userInfo //тут будут содержаться все дочерние reducer'ы
+		});
+
+	export default rootReducer;
+
+	info.js - создадим наш reducer
+		const inital_state = { //наподобие базы данных
+			user: "unknown user"
+		}
+
+		export default function userInfo(state = inital_state) {
+			return state;
+		}
+
+После создания приложения, возвращаемся в наш файл index.js с приложением и импортируем rootReducer
+import rootReducer from './reducers/index.js';
+const store = createStore(rootReducer) //когда будем обращаться к store, он будет вызывать все reducer'ы
+
+Далее, подключим наш компонент к стору. В файле с компонентом App
+import { connect } from 'react-redux';
+
+class App extends React.Component {
+	render() {
+		...
+	}
+}
+
+function mapStateToProps(state) { //функция будет передавать state в свойства. Чтобы она заработала, передадим ее первым аргументом в connect()()
+	return {
+		user: state.userInfo.user //(state = rootReducer) -> userInfo -> user
+	}
+}
+
+export default connect(mapStateToProps)(App); //подключение к стору. Теперь в App будет доступно свойство this.props.user = "unknown user"
+
+-----------Основы------------
+Store - объект. Содержит состояние всего приложения.
+	store.getState() - получить состояние приложения
+	store.dispatch(action) - позволяет обновить состояние приложения, путем вызова ("диспатча") действия
+	store.subscribe(listener) - подписать слушателя
+
+Actions - это объект. Обязательно поле type. По общепринятому соглашению, все данные, передающиеся вместе с действием, необходимо записывать в поле payload.
+	В type можно записать любое название
+	Например:
+	{
+		type: 'LOAD_PHOTO',
+		payload: 2018
+	}
+	и
+	{
+		type: 'PHOTO_LOADED_SUCCESSFUL',
+		payload: [photos_array]
+	}
+	Обычно, тип действия описывают как константу.
+		const GET_PHOTO_REQUEST = 'GET_PHOTO_REQUEST';
+		const GET_PHOTO_SUCCESS = 'GET_PHOTO_SUCCESS';
+
+	Чтобы вызвать actions, нужно написать функцию (ActionsCreator):
+		function getPhotos(year) {
+			return {
+				type: GET_PHOTOS,
+				payload: year
+			};
+		}
+
+	Actions описывает факт того, что что-то произошло, но не то, как должно состояние измениться в ответ. Это работа для Reducer'а.
+	Reducer composition - паттерн построения redux приложений. Глобальный стейт разбивается на элементарные части. За каждую такую часть отвечает свой reducer. Все элементарные reducer'ы объединяются в rootReducer.
+	

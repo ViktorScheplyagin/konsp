@@ -1,0 +1,146 @@
+-----------------------------XMLHttpRequest основы--------------------------------
+XMLHttpRequest, как правило, используют для загрузки данных. Конструктор для объекта, методы которого посылают запросы.
+var xhr = new XMLHttpRequest();
+
+xhr.open(method, URL, async, user, password) - задает основные параметры запроса
+	method - http-метод. GET или POST. Бывают и более редкие TRACE/DELETE/PUT и т.д.
+	URL - адрес запроса, с указанием протокола (http/https://..., fitp://..., file://)
+		При этом есть ограничение безопасности ("Same Origin Policy") - запрос со страницы можно отправлять только на тот же протокол://домен:порт с которого она пришла. Это можно обойти.
+	async - true/false. Произвести запрос асинхронно/синхронно. По умолчанию true.
+		Если синхронных запрос - после вызова xhr.send() и до ответа, главный поток будет "замрожен". Страница "зависнет".
+		Асинхронный - наоборот. Результат запроса можно будет получить через обработчики событий.
+	user, password - данные для http-авторизации, если они нужны.
+xhr.send([body]) - отсылает, настроенный в xhr.open(), запрос.
+	body - тело запроса
+xhr.abort() - прервать выполнение запроса.
+
+Свойства, составляющие ответ сервера, так же записываются в xhr
+xhr.status - http-код ответа (200, 404 и т.д.). Может быть 0, если сервер не ответил при запросе на другой домен.
+xhr.statusText - текстовое описание статуса (OK, Not Found, Forbidden и т.д.)
+xhr.responseText - текст ответа сервера.
+xhr.responseXML - если сервер вернул XML с заголовком Content-type: text/xml, то браузер создаст из него xml-документ.
+	Обычно возвращается json, а не xml, и преобразовывается в объект JSON.parse(xhr.responseText).
+
+Событие readystatechange - в процессе отправки и получения ответа меняется несколько раз.
+	Можно посмотреть текущее значение в свойстве xhr.readyState.
+	Список возможных состояний:
+		UNSENT = 0
+		OPENED = 1
+		HEADERS_RECEIVED = 2
+		LOADING = 3 //загружается тело. Повторяется при каждом получении пакета данных
+		DONE = 4
+Во время пересылки данных по сети, мы не управляем, в каких местах данные делятся на пакеты.
+
+HTTP-заголовки
+	xhr.setRequestHeader(name, value) - установить заголовок name со значением value.
+		Нельзя установить заголовки, контроллируемые браузером (Referer, Host и др.)
+		Невозможно отменить установленный заголовок. Повторный вызов добавит информацию к существующему.
+	xhr.getResponseHeader(name) - получить значение заголовка name (кроме Set-Cookie и Set-Cookie2).
+	xhr.getAllResponseHeaders() - получить все заголовки ответа, в виде одной строки, кроме Set-Cookie и Set-Cookie2.
+	xhr.timeout - максимальная продолжительность выполнения асинхронного запроса, в мс.
+		При превышении таймаута, выполнение запроса прервется и будет сгенерировано событие ontimeout.
+События по ходу выполнения запроса:
+	loadstart - запрос начат.
+	progress - получен очередной пакет данных. Полученные, в данных момент, данные можно прочитать в responseText
+	abort - отменено, вызовом xhr.abort().
+	error - произошла ошибка.
+	load - запрос успешно заверщен (без ошибок)
+	timeout - прервано по таймауту
+	loadend - запрос завершен (успешно или неуспешно)
+
+--------------------------XMLHttpRequest POST, формы и кодировка------------------------------
+Во время обычной отправки <form>, браузер собирает значения ее полей и составляет из них тело POST/GET запроса. При отправке данных через XMLHttpRequest, это делается самостоятельно.
+Стандартное кодирование URL - кодировка urlencoded.
+Правила составления запроса:
+	Браузер перечисляет пары "имя"="значение" через &
+	Все символы, кроме английских букв, цифр и символов - _ . ! ~ * ' ( ), заменяются на их UTF-8 код, со знаком % между каждым байтом.
+encodeURIComponent(str) - возвращает закодированную строку str в urlencoded кодировке.
+Например:
+	let params = 'name=' + encodeURIComponent('name') + '&surname=' + encodeURIComponent(surname);
+	xhr.open('GET', '/submit?' + params, true);
+	Такую отправку формы сервер не отличит от обычной.
+
+В методе POST, параметры передаются не в URL, а в теле запроса.
+send(body) - передать запрос с телом body.
+В зависимости от значения атрибута enctype, у тега <form>, браузер кодирует данные разным образом, перез отправкой на сервер. Для метода POST, доступны 3 значения:
+	application/x-www-form-urlencoded
+	multipart/form-data
+	text-plain
+При POST, обязателен заголовок Content-Type.
+	Например: xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+Всгда используется кодировка UTF-8 по умолчанию.
+Кодировка multipart/form-data
+	Можно пересылать данные каждого поля формы отдельно.
+	Поля разделяются случайно сгенерированной строкой "разницей" ("boundary");
+	let boundary = String(Math.random()).slice(2);
+	let boundaryMiddle = '--' + boundary + '\r\n';
+	let boundaryLast = '--' + boundary + '--\r\n';
+
+	let data = {
+		name: "Lorem",
+		surname: "Ipsum"
+	}
+	let body = ['\r\n'];
+	for(let key in data) {
+		body.push('Content-Desposition: form-data; name="' + key + '"\r\n\r\n' + data[key] + '\r\n');
+	}
+	body = body.join(boundaryMiddle) + boundaryLast;
+
+	xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
+	...
+	xhr.send(body);
+
+Отправка файла (например, картинка)
+	Заголовки должны быть следующими
+	Content-Desposition: form-data; name='myfile'; filename='pic.jpg'
+	Content-Type: image/jpeg
+	(empty string)
+	...File_content...
+
+Объект FormData
+	Пример:
+		html:
+			<form ... name="person">
+				<input name="name" value="Lorem" />
+				<input name="surname" value="Ipsum" />
+			</form>
+		JS:
+			let formData = new FormData(document.forms.person); //либо без аргументов, либо с DOM элементом формы
+			formData.append('patronym', 'Robertovich'); //добавить данные в виде "ключ, значение" к форме
+
+			let xhr = new XMLHttpRequest();
+			xhr.open('POST', '/url');
+			xhr.send(formData);
+
+	Объект FormData можно сразу отсылать. Его интеграция с XMLHttpRequest встроена в браузер. Кодировка будет multipart/form-data.
+Использование JSON:
+	let xhr = new XMLHttpRequest();
+
+	let json = JSON.stringify({
+		name: "Lorem",
+		surname: "Ipsum"
+	});
+
+	xhr.open('POST', '/url', true);
+	xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+
+	xhr.onreadystatechange = ...;
+	xhr.send(json);
+
+
+--------------------------XMLHttpRequest POST: кросс-доменные запросы------------------------------
+Запрос на другой домен отсылается просто указанием URL в .open().
+Запрос обязательно должен быть асинхронным.
+В спецификации CORS, запросы делятся на 2 вида:
+	Простые - которые удовлетворяют 2м условиям
+		1. Простой метод: GET, POST, HEAD
+		2. Простые заголовки
+			Accept;
+			Accept-Language;
+			Content-Language;
+			Content-Type со значением application/x-www-form-urlencoded, multipart/form-data, text/plain
+	"Непростыми" счиаются все остальные
+
+	Разница между ними заключается в том, что простые можно сформировать и отправить без XMLHttpRequest, Н/П с помощью формы.
+В спецификации CORS есть один общий принцип: все новые возможности стандарта доступны только с явного согласия сервера.
+В кросс-доменный запрос браузер автоматически обавляет заголовок Origin, содержащий домен, с которого осуществлен запрос.

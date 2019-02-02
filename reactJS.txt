@@ -5,6 +5,42 @@
 4. Перейти в папку с проектом и выполнить create-react-app app-name
 5. Перейти в папку с только что созданным проектом (в нашем случае это папка app-name) и выполнить npm start
 
+----Без create-react-app
+1. npm init - создастся package.json
+2. npm i -S react react-dom - установить эти 2 пакета в dependencies
+3. npm i -D webpack webpack-cli webpack-dev-server - установить webpack
+	webpack-dev-server - для использование live-reloading
+4. npm i -D babel babel-core babel-loader babel-preset-env babel-preset-react html-webpack-plugin http-server - установить babel
+	babel - собственно сам babel
+	babel-core - API для Node.js
+	babel-loader - позволяет транспайлить js, исползуя babel и webpack
+	babel-preset-env - использует browserlist чтобы транспайлить только то что не поддерживается
+	babel-preset-react - для транспайлинга JSX синтаксиса
+	html-webpack-plugin - упрощает создание html-файлов для обслуживания бандлов webpack'а.
+	http-server - простой http сервер.
+
+----Папка src
+	index.js - точка входа в наше приложение
+	index.html - тут подключаем наш скомпиленый js-файл
+
+package.json - какие пакеты мы устанавливаем
+package-lock.json - какие версии каких зависимостей нужны
+
+----webpack.config.js
+const path = require("path");
+
+module.exports = {
+	entry: './src/index.js', //точка входа или исходный файл
+	output: { //выход
+		path: path.resolve(__dirname, "dist"), //в текущей папке проекта будет искать папку dist
+		file: "bundle.js" //название выходного файла
+	}
+	mode: "development"
+};
+
+Можно поставить дев-сервер:
+	npm -D webpack-dev-server webpack-cli
+
 -----------------------BabelJS-----------------------
 Вообще, импользуется для переработки JS синтаксиса одного стандарта в синтаксис другого, но, функция преобразования JSX (XML в js) в нем тоже есть.
 Необходимо установить:
@@ -16,7 +52,7 @@
 ------------------------Компоненты----------------------
 Можно все компоненты создать в файле App.js или создать папку с компонентами, где для каждого из них, будет свой js-файл, а их уже импортировать в App.js
 Компонент используется как класс, наследующий от класса Component, в котором есть метод render().
-	Метод render() возвращает JSX код, который и будет показан на странице.
+	Метод render() возвращает JSX код, который и будет преобразован babel'ом в html и показан на странице.
 App.css - стили компонента
 ReactDOM.render(JSXelem, DOMContainer, callback) - отрендерить JSX-код внутри container
 Компоненты бывают:
@@ -281,6 +317,61 @@ children - свойство, хранящее все дочерние элеме
 
 let node = this.myRef.current //после того как, через ref, передана ссылка, целевой узел можно получить по свойству current
 Когда ref применился к обычному HTML
+
+---------------------------------------React Router----------------------------------
+1. Сначала нужно установить пакеты react-router и react-router-dom
+2. В главном файле
+	import { BrowserRouter as Router, Route, Link } from 'react-router-dom'
+		BrowserRouter - сам роутер. Использует History API и следит за тем чтобы ui совпадал с написанным в адресной строке
+		Route - отвечает за отображение, непосредственно, ui и следит за тем чтобы пути между компонентом и адресной строкой совпадали
+		Link - "видоизмененная" ссылка для редиректа на нужную страницу
+
+	import createBrowserHistory from 'history/createBrowserHistory'
+		Дополнительный модуль 'history' устанавливается вместе с react-router. Нужен для того, чтоб js-приложение вело свою историю одинаково, независимо от той среды, в которой оно находится
+
+3. const history = createBrowserHistory();
+
+4. Каждая страница должна представлять собой компонент.
+	const Home = () => {<div>Home</div>}
+	const About = () => {<div>About</div>}
+	const Contacts = () => {<div>Contacts</div>}
+
+5. Создадим сам роутер. Это обычный react-компонент
+	class Navigation extends React.Component {
+		render() {
+			return (
+				<Router history={history}>
+					<div>
+						<ul>
+							<li>
+								<Link to="/"> 	//Атрибут to отвечает за то на какую страницу будет идти редирект.
+									Home
+								</Link>			//слеш означает что на страницу "home"
+							</li>
+							<li>
+								<Link to="/about">About</Link>
+							</li>
+							<li>
+								<Link to="/contacts">Contacts</Link>
+							</li>
+						</ul>
+
+						<hr />
+
+						<Route exact path="/" component={Home} /> //отвечает за рендер нужного компонента
+																	//атрибут exact обязывает компонент рендериться ТОЛЬКО по указанному адресу
+						<Route path="/about" component={About} />
+						<Route path="/contacts" component={Contacts} />
+					</div>
+				</Router>
+			)
+		}
+	}
+
+	export default Navigation;
+
+
+
 
 =======================================Advanced Guide===========================================
 --------Accessbility---------
