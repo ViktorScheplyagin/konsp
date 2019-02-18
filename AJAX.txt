@@ -4,7 +4,7 @@ var xhr = new XMLHttpRequest();
 
 xhr.open(method, URL, async, user, password) - задает основные параметры запроса
 	method - http-метод. GET или POST. Бывают и более редкие TRACE/DELETE/PUT и т.д.
-	URL - адрес запроса, с указанием протокола (http/https://..., fitp://..., file://)
+	URL - адрес запроса, с указанием протокола (http/https://..., ftp://..., file://)
 		При этом есть ограничение безопасности ("Same Origin Policy") - запрос со страницы можно отправлять только на тот же протокол://домен:порт с которого она пришла. Это можно обойти.
 	async - true/false. Произвести запрос асинхронно/синхронно. По умолчанию true.
 		Если синхронных запрос - после вызова xhr.send() и до ответа, главный поток будет "замрожен". Страница "зависнет".
@@ -41,7 +41,7 @@ HTTP-заголовки
 		При превышении таймаута, выполнение запроса прервется и будет сгенерировано событие ontimeout.
 События по ходу выполнения запроса:
 	loadstart - запрос начат.
-	progress - получен очередной пакет данных. Полученные, в данных момент, данные можно прочитать в responseText
+	progress - получен очередной пакет данных. Полученные, в данный момент, данные можно прочитать в responseText
 	abort - отменено, вызовом xhr.abort().
 	error - произошла ошибка.
 	load - запрос успешно заверщен (без ошибок)
@@ -71,27 +71,36 @@ send(body) - передать запрос с телом body.
 Всгда используется кодировка UTF-8 по умолчанию.
 Кодировка multipart/form-data
 	Можно пересылать данные каждого поля формы отдельно.
-	Поля разделяются случайно сгенерированной строкой "разницей" ("boundary");
-	let boundary = String(Math.random()).slice(2);
-	let boundaryMiddle = '--' + boundary + '\r\n';
-	let boundaryLast = '--' + boundary + '--\r\n';
-
+	Поля разделяются случайно сгенерированной строкой "разницей" ("boundary"), которая может иметь в себе до 70 символов, без пробела. 
 	let data = {
 		name: "Lorem",
 		surname: "Ipsum"
 	}
+
+	let boundary = String(Math.random()).slice(2);
+	let boundaryMiddle = '--' + boundary + '\r\n';
+	let boundaryLast = '--' + boundary + '--\r\n';
+
 	let body = ['\r\n'];
 	for(let key in data) {
 		body.push('Content-Desposition: form-data; name="' + key + '"\r\n\r\n' + data[key] + '\r\n');
-	}
+	} //каждая отдельная часть содержится в значении заголовка Content-Desposition
 	body = body.join(boundaryMiddle) + boundaryLast;
 
+	//тело готово. Отправляем
+	let xhr = new XMLHttpRequest();
+	xhr.open('POST', '/url');
 	xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
-	...
+	
+	xhr.onreadystatechange = () => {
+		if(xhr.readyState != 4) return;
+		alert(xhr.responseText);
+	}
+
 	xhr.send(body);
 
 Отправка файла (например, картинка)
-	Заголовки должны быть следующими
+	Так же, через post, но заголовки должны быть следующими:
 	Content-Desposition: form-data; name='myfile'; filename='pic.jpg'
 	Content-Type: image/jpeg
 	(empty string)
@@ -143,4 +152,23 @@ send(body) - передать запрос с телом body.
 
 	Разница между ними заключается в том, что простые можно сформировать и отправить без XMLHttpRequest, Н/П с помощью формы.
 В спецификации CORS есть один общий принцип: все новые возможности стандарта доступны только с явного согласия сервера.
+
 В кросс-доменный запрос браузер автоматически обавляет заголовок Origin, содержащий домен, с которого осуществлен запрос.
+	Если сревер разрешает такой запрос к себе, то его ответ должен содержать заголовок Access-Control-Allow-Origin со значением '*'
+	или доменом, откуда пришел запрос и будет событие onload. Иначе, браузер посчитает что сервер запретил этот запрос и будет ошибка onerror.
+	При данном запросе не передаются куки и заголовки HTTP-авторизации. Параметры user и password в open игнорируются. Это возможно обойти.
+Заголовки ответа:
+	Чтобы JS мог прочитать заголовок из ответа, сервер должен указать его имя в заголовке Access-Constrol-Expose-Headers
+		HTTP/1.1 200 OK
+		Content-Type:text/html; charset=UTF-8
+		Access-Control-Allow-Origin: http://javascript.ru
+		X-Uid: 123
+		X-Authorization: 2c9de507f2c54aa1
+		Access-Control-Expose-Headers: X-Uid, X-Authorization
+	По умолчанию, скрипт может прочитать только простые заголовки:
+		Cache-Control
+		Content-Language
+		Content-Type
+		Expires
+		Last-Modified
+		Pragma
