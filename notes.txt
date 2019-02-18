@@ -1,4 +1,4 @@
 Access token for dev.azure.com:
-	ae3kp5x3gpny3cejyp7uccnt4wcsssindl65uurfawrb4zfkzvua
+	4nxawzq5bvciti5wcxgfdxxoz56ufd3dk4vl4t4gdydefs2mbidq
 
 ---------------------------Work---------------------------
