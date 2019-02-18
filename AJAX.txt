@@ -56,13 +56,13 @@ HTTP-заголовки
 	Все символы, кроме английских букв, цифр и символов - _ . ! ~ * ' ( ), заменяются на их UTF-8 код, со знаком % между каждым байтом.
 encodeURIComponent(str) - возвращает закодированную строку str в urlencoded кодировке.
 Например:
-	let params = 'name=' + encodeURIComponent('name') + '&surname=' + encodeURIComponent(surname);
+	let params = 'name=' + encodeURIComponent('name') + '&surname=' + encodeURIComponent('surname');
 	xhr.open('GET', '/submit?' + params, true);
 	Такую отправку формы сервер не отличит от обычной.
 
 В методе POST, параметры передаются не в URL, а в теле запроса.
 send(body) - передать запрос с телом body.
-В зависимости от значения атрибута enctype, у тега <form>, браузер кодирует данные разным образом, перез отправкой на сервер. Для метода POST, доступны 3 значения:
+В зависимости от значения атрибута enctype, у тега <form>, браузер кодирует данные разным образом, перед отправкой на сервер. Для метода POST, доступны 3 значения:
 	application/x-www-form-urlencoded
 	multipart/form-data
 	text-plain
@@ -87,26 +87,32 @@ send(body) - передать запрос с телом body.
 	body = body.join(boundaryMiddle) + boundaryLast;
 
 	xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
-	...
+	
+	xhr.onreadystatechange = function() {
+		if(this.readyState != 4) return;
+
+		alert(this.responseText)
+	}
+
 	xhr.send(body);
 
 Отправка файла (например, картинка)
 	Заголовки должны быть следующими
 	Content-Desposition: form-data; name='myfile'; filename='pic.jpg'
 	Content-Type: image/jpeg
-	(empty string)
-	...File_content...
+	(пустая строка)
+	содержимое файла
 
 Объект FormData
 	Пример:
 		html:
-			<form ... name="person">
+			<form name="person">
 				<input name="name" value="Lorem" />
 				<input name="surname" value="Ipsum" />
 			</form>
 		JS:
 			let formData = new FormData(document.forms.person); //либо без аргументов, либо с DOM элементом формы
-			formData.append('patronym', 'Robertovich'); //добавить данные в виде "ключ, значение" к форме
+			formData.append('patronym', 'Robertovich'); //добавить еще данные в виде "ключ, значение" к форме, для пересылки
 
 			let xhr = new XMLHttpRequest();
 			xhr.open('POST', '/url');
@@ -143,4 +149,7 @@ send(body) - передать запрос с телом body.
 
 	Разница между ними заключается в том, что простые можно сформировать и отправить без XMLHttpRequest, Н/П с помощью формы.
 В спецификации CORS есть один общий принцип: все новые возможности стандарта доступны только с явного согласия сервера.
-В кросс-доменный запрос браузер автоматически обавляет заголовок Origin, содержащий домен, с которого осуществлен запрос.
+
+CORS для простых запросов
+В кросс-доменный запрос браузер автоматически добавляет заголовок Origin, содержащий домен, с которого осуществлен запрос.
+Сервер должен дать доступ в ответе

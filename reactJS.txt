@@ -498,3 +498,73 @@ SyntheticEvent имеет следующие свойства:
 
 Перечень возможных SyntheticEvent
 	См. Доку
+
+
+------------Context--------------
+ПОзволяет передавать данные, рассматриваемые как гллобальные, глубоко вниз по иерархии, без промежуточной передачи предкам целевого элемента.
+Пример:
+	const ThemeContext = React.createContext("light"); //создадим переменную, хранящую контекст. По умолчанию он будет иметь значение "light"
+
+	class App extends React.Component {
+		render() {
+			return (
+				<ThemeContext.Provider value="dark"> //provider используется для передачи контекста компоненту. Все дочерние элементы 										компонента, независимо от того, как глубоко они находятся, смогут читать 											  контекст. Текущее значение "dark". В value передаем значение для шаринга в 										  нашем контексте
+					<Toolbar />
+				</ThemeContext.Provider>
+			);
+		}
+	}
+
+	function Toolbar(props) {
+		return (
+			<div> //Нет необходимости передавать контекст промежуточному компоненту
+				<ThemeButton />
+			</div>
+		);
+	}
+
+	class ThemeButton extends React.Component {
+
+	}
+
+----API----
+const MyContext = React.createContext(defaultValue) - создает объект с контекстом. Когда рендерится объект, подписанный на Context, 	он читает значение context из ближайшего Provider'a, что выше по дереву.
+	defaultValue - используется когда выше по дереву нет Provider. Если Provider'у передать значение undefined, то defaultValue, в этом случае, не будет читаться.
+<MyContext.Provider value={/*some value*/}> - все дочерние компоненты Provider'a подписываются на контекст, указанный в value 
+	(иначе, defaultValue). Все компоненты будут ре-рендерить изменения в их контексте. Provider не является субъектом shouldComponentUpdate, потому, компонент будет обновлен, даже если предок запретит обновление.
+	При передаче объектов как value, могут возникнуть некоторые проблемы. Об этом ниже.
+MyClass.contextType = MyContext - свойству contextType присваивается объект, созданный React.createContext(). 
+	Его значение (свойство value) можно получить внутри класса, по this.context. Оно досупно на всех стадиях жизненного цикла.
+	Таким образом можно подписываться ТОЛЬКО на один контекст. Для подписывания на множество контекстов, испольхыется другой подход, о котором ниже.
+
+Consumer
+	<MyContext.Consumer>
+		(value) => {/*content for rendering, based on value prop*/}
+	</MyContext.Consumer>
+	Отличается от Provider тем, что свое содержимое рендерит как возвращенное функцией значение. Это позволяет менять контекст в функции.
+	Данный метод требует описание контента для рендеринга, внутри функции.
+	Аргумент value равен свойству value ближайшего Provider'a. 
+	Если провайдера нет, то используется значение defaultValue, метода React.createContext();
+
+Изменение контекста из грубины дерева:
+	//Создадим контекст
+	const MyContext = React.createContext({
+		defaultValue: someData,
+		contextToggler: () => {...}
+	});
+
+	//Далее (возможно и в другом файле), провайдер (консьюмер) получает не только дефолтное значение, но и функцию, которое его меняет.
+	function MyClass(props) {
+		return (
+			<MyContext.Consumer>
+				{ ({defaultValue, contextToggler}) => {
+					<button
+						onCLick={contextToggler}
+						style={{backgroundColor: defaultValue.background}}
+					>
+						Change my color
+					</button>
+				} }
+			</MyContext.Consumer>
+		)
+	}
