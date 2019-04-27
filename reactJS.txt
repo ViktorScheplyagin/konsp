@@ -430,7 +430,7 @@ Babel-транспайлер browser.min.js - для транспайлига JS
 	2. Происходят при обновлении компонента (Update Events)
 		Содержит 4 метода, которые вызываются когда компонент уже вставлен в DOM, т.е. не при первом render'е
 			2.1. componentWillReceiveProps(nextProps) //выполнится когда компонент готов получить свойства от родителя-контейнера
-			2.2. shouldComponentUpdate() //позволяет предупредить React о том, должен ли компонент обновляться или нет. Должен вернуть true (да) или false (нет)
+			2.2. shouldComponentUpdate(nextProps, nextState) //позволяет предупредить React о том, должен ли компонент обновляться или нет. Должен вернуть true (да) или false (нет)
 			2.3. componentWillUpdate(nextProps, nextState) //выполнится сразу перед обновлением (render) компонента
 			2.4. componentDidUpdate(prevProps, prevState) //выполнится сразу после обновления компонента
 				2.3 и 2.4 вызываются уже ПОСЛЕ изменения state. Если в них еще поменять state, то изменение state рекурсивно зациклится
@@ -528,7 +528,7 @@ SyntheticEvent имеет следующие свойства:
 	}
 
 ----API----
-const MyContext = React.createContext(defaultValue) - создает объект с контекстом. Когда рендерится объект, подписанный на Context, 	он читает значение context из ближайшего Provider'a, что выше по дереву.
+const MyContext = React.createContext(defaultValue) - создает объект с контекстом. Когда рендерится объект, подписанный на Context, он читает значение context из ближайшего Provider'a, что выше по дереву.
 	defaultValue - используется когда выше по дереву нет Provider. Если Provider'у передать значение undefined, то defaultValue, в этом случае, не будет читаться.
 <MyContext.Provider value={/*some value*/}> - все дочерние компоненты Provider'a подписываются на контекст, указанный в value 
 	(иначе, defaultValue). Все компоненты будут ре-рендерить изменения в их контексте. Provider не является субъектом shouldComponentUpdate, потому, компонент будет обновлен, даже если предок запретит обновление.
