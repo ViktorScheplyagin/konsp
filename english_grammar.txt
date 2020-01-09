@@ -9,3 +9,21 @@ subject + verb + noun
 I / We / They + глагол
 I live in Moscow
 We speak English
+
+
+-------------------------------Lesson #2------------------------------------
+Present Simple
+
+
+
+---------------------------------Lesson #3----------------------------------------
+Present Simple - настоящее
+	Подлежащее + глагол
+	I / We / You / They + verb
+		I work
+	He / She / It + verb + s 
+		He works
+		She speaks English
+		It helps you
+		She works a lot - она работает много
+		She likes these lessons - ей нравятся эти уроки
